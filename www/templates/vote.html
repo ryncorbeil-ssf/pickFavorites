@@ -1,0 +1,18 @@
+<ion-view view-title="Pick your favorite(s)">
+    <ion-nav-buttons side="left">
+    </ion-nav-buttons>
+    <ion-content>
+        <button class="button button-block button-positive" ng-click="doneButtonTapped()">
+          Done
+        </button>
+    <!-- our list and list items -->
+        <ion-list>
+          <ion-item ng-repeat="candidate in candidates" ng-model="index">
+            <div class="item" ng-click="clicked(candidate)" ng-class="{ active: candidate.selected }">
+                <h3 class="spaceWrap"><b>{{candidate.name}}</b></h3> Rank {{candidate.rank}}
+            </div>
+          </ion-item>
+        </ion-list>
+        
+    </ion-content>
+</ion-view>
