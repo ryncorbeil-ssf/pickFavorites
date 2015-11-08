@@ -19,6 +19,13 @@ function ($http, ENDPOINT_URL) {
     return $http.post(getUrl()+"login",user);
   };
   
+  /*
+  service.logout = function(token) {
+      return $http.post(getUrl()+"logout?access_token="+token
+    );
+  };
+  */
+  
   service.logout = function(token) {
     return $http({
         url: getUrl()+"logout",
@@ -28,6 +35,7 @@ function ($http, ENDPOINT_URL) {
         }
      });
   };
+  
 }])
 
 .service('ServerCandidateService', ['$http', 'ENDPOINT_URL',
@@ -165,5 +173,14 @@ function ($http, ENDPOINT_URL) {
   };
               
 
+
+
+  service.getRankings = function(token)
+  {
+    return $http.post(getUrl()+"getRankings",{
+        params: { access_token: token }
+    });
+  };
+  
 }])
 ;

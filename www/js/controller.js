@@ -417,62 +417,84 @@ ServerCurrentTotalsService) {
     };
     
     var candidates = CandidatesService.getCandidates();
-    var numberCandidates = candidates.length;
     
-    var totals = [];
-    
-    function compareRank(a, b) {
-        if (a.rank < b.rank)
+    function compareName(a, b) {
+        if (a < b)
             return -1;
-        if (a.rank > b.rank)
+        if (a > b)
             return 1;
         return 0;        
     }
     
-    function showCurrentTotals() {
-        // for each candidate, get her current totals.
-        for (var i=0; i<numberCandidates; i++) {
-            ServerCurrentTotalsService.getCurrentTotal(candidates[i].id, $window.localStorage['token'])
-            .then(function(response) {
-                if (response.status === 200 && response.data != undefined) {
-                    var currentTotal = response.data;
-                    
-                    // compute total ranking for this candidate and store in array
-                    var total = currentTotal.firstPlaceVotes*numberCandidates + 
-                                currentTotal.secondPlaceVotes*(numberCandidates-1) +
-                                currentTotal.thirdPlaceVotes*(numberCandidates-2);
-                                
-                    totals.push({ "name": candidates[i].name, "total": total});
-                }
-            }, function(response) {
-            // something went wrong
-        }); 
+    function idToName(id)
+    {
+        var name = "";
+        for (var i=0; i<candidates.length; i++)
+        {
+            if (id == candidates[i].id) {
+                name = candidates[i].name;
+                break;
+            }
         }
-        
-
-        
-        // sort array
-        totals.sort(compareRank);
-        
-        // display in chart
+        return name;
     }
     
-    showCurrentTotals();
+    $scope.labels = [];
+    $scope.data =[[]];
+    var totalPossibleScore = 0;
+                    
+    function showCurrentRankings() {
+        // get current rankings for all candidates.
+        ServerCurrentTotalsService.getRankings($window.localStorage['token'])
+        .then(function(response) {
+            //if (response.status === 200 && response.data.length > 0) {
+            
+                // display in chart
+                var rankings = response.data.status;
+
+                
+                for(var i=0; i<candidates.length; i++){
+                    $scope.labels.push(idToName(rankings[i].candidateId));
+                    totalPossibleScore += rankings[i].score;
+                }
+                
+                for(var i=0; i<candidates.length; i++){
+                    $scope.data[0].push(returnPercentage(rankings[i].score));
+                }
+                
+                //$scope.labels.sort(compareName);
+
+                $scope.options = {
+                    scaleIntegersOnly: true,
+                    animation: false,
+                    responsive:true,
+                    maintainAspectRatio: false,
+                    scaleOverride: true,
+                    scaleSteps: 4,
+                    scaleStepWidth: 25,
+                    scaleStartValue: 0,
+                    scaleLabel: "<%=value%>"+"%",
+                    tooltipTemplate: "<%if (label){%><%=label%>: <%}%><%= value.toFixed(0) %>"+"%",
+                };
+                
+                $scope.colours = [{
+                    fillColor: "rgba(151,187,205,0.2)",
+                    strokeColor: "rgba(15,187,25,1)",
+                    pointColor: "rgba(15,187,25,1)",
+                    pointStrokeColor: "#fff",
+                    pointHighlightFill: "#fff",
+                    pointHighlightStroke: "rgba(151,187,205,0.8)"
+                }];
+                
+                function returnPercentage (value)
+                {
+                    return (value/totalPossibleScore)*100;
+                }
+        });
+    }
     
-    /*
-    $scope.labels = ["January", "February", "March", "April", "May", "June", "July"];
-      $scope.series = ['Series A', 'Series B'];
-      $scope.data = [
-        [65, 59, 80, 81, 56, 55, 40],
-        [28, 48, 40, 19, 86, 27, 90]
-      ];
-      $scope.onClick = function (points, evt) {
-        console.log(points, evt);
-      };        
-    */
-    //$scope.labels = ["Download Sales", "In-Store Sales", "Mail-Order Sales"];
-    //$scope.data = [300, 500, 100];
-    
-    
+    showCurrentRankings();
+
+
 }])
 ;
