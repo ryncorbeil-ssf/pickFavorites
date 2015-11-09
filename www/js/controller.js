@@ -229,9 +229,126 @@ function($scope, $state, $ionicHistory, UserService, $window,
 'ServerBallotService', 'ServerCurrentTotalsService',
 function($scope, $state, UserService, $ionicHistory, $window, SSFAlertsService, CandidatesService, 
     ServerBallotService, ServerCurrentTotalsService) {
-    $scope.candidates = CandidatesService.getCandidates();
+        
+    $scope.predicate = "Name";
+    
+    $scope.ordered = function(predicate) {
+        //$scope.reverse = ($scope.predicate === predicate) ? !$scope.reverse : false;
+        //$scope.predicate = predicate;
+        switch(predicate)
+           {
+              case 'Name':
+                 $scope.candidates = byNameCandidates;
+                 break;
+        
+              case 'Party':
+                 $scope.candidates = byPartyCandidates;
+                 break;
+                 
+              case 'Score':
+                  $scope.candidates = byScoreCandidates;
+                  break;
+            }
+    };
+      
+    var candidates = CandidatesService.getCandidates();
+    var byNameCandidates = angular.copy(candidates.sort(compareByLastName), byNameCandidates);
+    var byPartyCandidates = angular.copy(candidates.sort(compareByParty), byPartyCandidates);
+    var byScoreCandidates =[];
+    getCurrentRankings();
+    
+    
+    function compareByLastName(a, b) {
+        var aAll = a.name.split(" ");
+        var aLast = aAll[Math.max(0, aAll.length-1)];
+        var bAll = b.name.split(" ");
+        var bLast = bAll[Math.max(0, bAll.length-1)];
+        
+        if (aLast < bLast)
+            return -1;
+        if (aLast > bLast)
+            return 1;
+        return 0;        
+    }
+    
+    function compareByParty(a, b) {
+        if (a.party < b.party)
+            return -1;
+        if (a.party > b.party)
+            return 1;
+        return 0;        
+    }
+    
+    function compareByScore(a, b) {
+        if (a.score < b.score)
+            return 1;
+        if (a.score > b.score)
+            return -1;
+        return 0;        
+    }
+    
+    function getCurrentRankings() {
+        // get current rankings for all candidates.
+        ServerCurrentTotalsService.getRankings($window.localStorage['token'])
+        .then(function(response) {
+            //if (response.status === 200 && response.data.length > 0) {
+            
+                var rankings = response.data.status;
+                rankings.sort(compareByScore);
+                angular.copy(rankings, byScoreCandidates);
+                
+                // fill in name, party, status fields...
+                for (var i=0; i<byScoreCandidates.length; i++) {
+                    byScoreCandidates[i].name = idToName(byScoreCandidates[i].candidateId);
+                    byScoreCandidates[i].party = idToParty(byScoreCandidates[i].candidateId);
+                    byScoreCandidates[i].status = idToStatus(byScoreCandidates[i].candidateId);
+                }
+        });
+    }               
+    
+    function idToName(id)
+    {
+        var name = "";
+        for (var i=0; i<candidates.length; i++)
+        {
+            if (id == candidates[i].id) {
+                name = candidates[i].name;
+                break;
+            }
+        }
+        return name;
+    }
+    
+    function idToParty(id)
+    {
+        var party = "";
+        for (var i=0; i<candidates.length; i++)
+        {
+            if (id == candidates[i].id) {
+                party = candidates[i].party;
+                break;
+            }
+        }
+        return party;
+    }
+    
+    function idToStatus(id)
+    {
+        var status = "";
+        for (var i=0; i<candidates.length; i++)
+        {
+            if (id == candidates[i].id) {
+                status = candidates[i].status;
+                break;
+            }
+        }
+        return status;
+    }
+    
+    $scope.candidates = byNameCandidates;
     var newBallot = {};
     var selected = [];
+    var minimumRequired = 3;  //TODO make this a config constant
 
     $scope.clicked = function (member) {
         var index = selected.indexOf(member);
@@ -265,14 +382,17 @@ function($scope, $state, UserService, $ionicHistory, $window, SSFAlertsService, 
     
     $scope.doneButtonTapped = function(form)
     {
-        if(selected.length > 0)
-        {   
+        if(selected.length >= minimumRequired) {   
             updateModels();
+        }
+        else {
+            SSFAlertsService.showAlert("Info","Pick at least "+minimumRequired);
         }
     };
     
     function updateModels()
     {
+        //TODO make this dependent upon minimumSelected
         newBallot["first"] = selected[0].name;
         newBallot["second"] = selected[1].name;
         newBallot["third"] = selected[2].name;
@@ -297,6 +417,7 @@ function($scope, $state, UserService, $ionicHistory, $window, SSFAlertsService, 
         return id;
     }
     
+
     function upvoteAndAddBallot(){
                 ServerCurrentTotalsService.upvoteFirst(nameToId(newBallot.first), $window.localStorage['token'])
                 .then(function(res1) {
@@ -454,12 +575,17 @@ ServerCurrentTotalsService) {
 
                 
                 for(var i=0; i<candidates.length; i++){
-                    $scope.labels.push(idToName(rankings[i].candidateId));
-                    totalPossibleScore += rankings[i].score;
+                    // don't display candidates with no rank
+                    if(rankings[i].score > 0) {
+                        $scope.labels.push(idToName(rankings[i].candidateId));
+                        totalPossibleScore += rankings[i].score;
+                    }
                 }
                 
                 for(var i=0; i<candidates.length; i++){
-                    $scope.data[0].push(returnPercentage(rankings[i].score));
+                    if(rankings[i].score > 0) {
+                        $scope.data[0].push(returnPercentage(rankings[i].score));
+                    }
                 }
                 
                 //$scope.labels.sort(compareName);

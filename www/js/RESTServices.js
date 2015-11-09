@@ -76,7 +76,7 @@ function ($http, ENDPOINT_URL) {
   
   service.getLatestBallot = function(userID, token)
   {
-    return $http.get(getUrl()+"?filter[where][voterId]="+userID+"&filter[order]=updated DESC&filter[limit]=1",{
+    return $http.get(getUrl()+"?filter[where][voterId]="+userID+"&filter[order]=date DESC&filter[limit]=1",{
         params: { access_token: token }
     });
   };
@@ -174,12 +174,17 @@ function ($http, ENDPOINT_URL) {
               
 
 
-
+/*
   service.getRankings = function(token)
   {
     return $http.post(getUrl()+"getRankings",{
         params: { access_token: token }
     });
+  };
+  */
+  service.getRankings = function(token)
+  {
+    return $http.post(getUrl()+"getRankings/?access_token="+token,{ });
   };
   
 }])

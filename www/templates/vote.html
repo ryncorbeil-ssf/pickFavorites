@@ -5,11 +5,25 @@
         <button class="button button-block button-positive" ng-click="doneButtonTapped()">
           Done
         </button>
+        
+        <div class="list">
+          <label class="item item-input item-select">
+              <div class="input-label">
+                  Sort by
+              </div>
+              <select ng-model="predicate" ng-change="ordered(predicate)">
+                  <option selected>Name</option>
+                  <option >Party</option>
+                  <option>Score</option>
+              </select>
+          </label>
+
+        </div>
     <!-- our list and list items -->
         <ion-list>
           <ion-item ng-repeat="candidate in candidates" ng-model="index">
             <div class="item" ng-click="clicked(candidate)" ng-class="{ active: candidate.selected }">
-                <h3 class="spaceWrap"><b>{{candidate.name}}</b></h3> Rank {{candidate.rank}}
+                <h3 class="spaceWrap"><b>{{candidate.name}}</b> <span style="color:blue">{{candidate.party}}</span>  <span>{{candidate.status}}</span></h3> Rank {{candidate.rank}}
             </div>
           </ion-item>
         </ion-list>
